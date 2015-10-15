@@ -49,31 +49,31 @@ print('generated datas')
 n_input = n_sampling_rate
 n_units = 10
 
-n_epoch = 100
+n_epoch = 50
 
 batchsize = 100
 
 
 # define model
-#fixed_model = FunctionSet(
-#    l1 = F.Linear(n_input, n_units)
-#)
-#model = FunctionSet(
-#    r1 = F.Linear(n_units, n_input)
-#)
+fixed_model = FunctionSet(
+    l1 = F.Linear(n_input, n_units)
+)
 model = FunctionSet(
-    l1 = F.Linear(n_input, n_units),
     r1 = F.Linear(n_units, n_input)
 )
+#model = FunctionSet(
+#    l1 = F.Linear(n_input, n_units),
+#    r1 = F.Linear(n_units, n_input)
+#)
 for i in range(0, 2 * 5, 2):
     for raw_x in range(0, n_sampling_rate):
         x = raw_x / n_sampling_rate
-        model.l1.W[i][raw_x] = 0.1 * math.sin(2 * math.pi * (i/2 + 1) * x)
-        #fixed_model.l1.W[i][raw_x] = 0.1 * math.sin(2 * math.pi * (i/2 + 1) * x)
-        #model.r1.W[raw_x][i] = 0.2 * math.sin(2 * math.pi * (i/2 + 1) * x)
-        model.l1.W[i + 1][raw_x] = 0.1 * math.cos(2 * math.pi * (i/2 + 1) * x)
-        #fixed_model.l1.W[i + 1][raw_x] = 0.1 * math.cos(2 * math.pi * (i/2 + 1) * x)
-        #model.r1.W[raw_x][i + 1] = 0.2 * math.cos(2 * math.pi * (i/2 + 1) * x)
+        #model.l1.W[i][raw_x] = 0.1 * math.sin(2 * math.pi * (i/2 + 1) * x)
+        fixed_model.l1.W[i][raw_x] = 0.1 * math.sin(2 * math.pi * (i/2 + 1) * x)
+        model.r1.W[raw_x][i] = 0.2 * math.sin(2 * math.pi * (i/2 + 1) * x)
+        #model.l1.W[i + 1][raw_x] = 0.1 * math.cos(2 * math.pi * (i/2 + 1) * x)
+        fixed_model.l1.W[i + 1][raw_x] = 0.1 * math.cos(2 * math.pi * (i/2 + 1) * x)
+        model.r1.W[raw_x][i + 1] = 0.2 * math.cos(2 * math.pi * (i/2 + 1) * x)
 
 
 #def forward(x_data, train = True):
@@ -95,8 +95,8 @@ def forward(x_data, train = True):
     x, t = Variable(x_data), Variable(x_data)
     #h1 = F.relu(model.l1(x))
     #y = F.relu(model.r1(h1))
-    #h1 = fixed_model.l1(x)
-    h1 = model.l1(x)
+    h1 = fixed_model.l1(x)
+    #h1 = model.l1(x)
     y = model.r1(h1)
     #return F.mean_squared_error(t, y) + 0.1 * kl_divergence(h1, 0.3)
     #kl_divergence(h1, 0.3)
@@ -104,7 +104,6 @@ def forward(x_data, train = True):
 
 
 optimizer = optimizers.Adam()
-#optimizer = optimizers.SGD()
 optimizer.setup(model)
 
 
@@ -148,8 +147,7 @@ x_range = np.arange(0, n_epoch, 1)
 plt.plot(x_range, log_loss_train, label='train')
 plt.plot(x_range, log_loss_test, label='test')
 plt.legend()
-#plt.show()
-plt.savefig('img/loss.png')
+plt.show()
 
 # output loss
 f = open('loss.txt', 'w')
@@ -163,8 +161,8 @@ raw_data = np.array(create_data_with_fourier_basis(), dtype=np.float32)
 data = raw_data.reshape((1, n_sampling_rate))
 
 x, t = Variable(data), Variable(data)
-#h1 = fixed_model.l1(x)
-h1 = model.l1(x)
+h1 = fixed_model.l1(x)
+#h1 = model.l1(x)
 y = model.r1(h1)
 
 print(h1.data)
@@ -173,15 +171,14 @@ x_range = np.arange(0, n_sampling_rate, 1)
 plt.plot(x_range, data[0], label='source')
 plt.plot(x_range, y.data[0], label='result')
 plt.legend()
-#plt.show()
-plt.savefig('img/example.png')
+plt.show()
 
 
 
 for i in range(0, n_units):
     plt.clf()
-    #plt.plot(x_range, fixed_model.l1.W[i])
-    plt.plot(x_range, model.l1.W[i])
+    plt.plot(x_range, fixed_model.l1.W[i])
+    #plt.plot(x_range, model.l1.W[i])
     plt.savefig('img/{0:03d}.png'.format(i))
 
 l2_reverse = []
